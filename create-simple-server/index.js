@@ -3,8 +3,14 @@ const http = require('http');
 
 const url = require('url');
 
-// READING MODULE 
+const slugify = require('slugify');
+
+const nodemon = require('nodemon');
+
+// READING MODULE
+
 const fs = require('fs');
+const { parse } = require('path');
 
 const replaceTemplate = (temp, product) => {
   let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
@@ -20,24 +26,38 @@ const replaceTemplate = (temp, product) => {
     output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
   }
   return output;
-}
+};
 
-const tempOverviewer = fs.readFileSync(`${__dirname}/templates/template-overview.html`, 'utf-8');
-const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'utf-8');
-const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.html`, 'utf-8');
+const tempOverviewer = fs.readFileSync(
+  `${__dirname}/templates/template-overview.html`,
+  'utf-8',
+);
+const tempCard = fs.readFileSync(
+  `${__dirname}/templates/template-card.html`,
+  'utf-8',
+);
+const tempProduct = fs.readFileSync(
+  `${__dirname}/templates/template-product.html`,
+  'utf-8',
+);
 
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const dataObj = JSON.parse(data);
+const slugs = dataObj.map((el) => slugify(el.productName, { lower: true }));
+console.log(slugs);
 
-// 1º CREATING A SERVER (REQ AND RES) !HTTP MODULE REQUIRED! createServer function 
+// console.log(slugify('Fresh Avocados', {lower:true}));
+
+// 1º CREATING A SERVER (REQ AND RES) !HTTP MODULE REQUIRED! createServer function
 const server = http.createServer((req, res) => {
   console.log(url);
-  console.log(req.url);
   const pathName = req.url;
 
   // OVERVIEW PAGE
   if (pathName === '/' || pathName === '/overview') {
-    const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el)).join('');
+    const cardsHtml = dataObj
+      .map((el) => replaceTemplate(tempCard, el))
+      .join('');
     const output = tempOverviewer.replace('{%PRODUCT_CARDS%}', cardsHtml);
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(output);
@@ -51,13 +71,11 @@ const server = http.createServer((req, res) => {
   if (pathName === '/api') {
     res.writeHead(200, { 'Content-type': 'application/json' });
     res.end(data);
-  }
-  else {
+  } else {
     res.writeHead(404, { 'Content-type': 'text/html' });
     res.end('<h1>Page not found!</h1>');
   }
-}
-);
+});
 
 // const port = 8000;
 
